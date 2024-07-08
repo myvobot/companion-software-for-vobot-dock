@@ -6,9 +6,9 @@ This repository contains the companion software for Vobot Mini Dock, primarily u
 ## Directory Structure
 
 - `computerMonitor/` - Contains the source code for the Hardware Monitoring software
-  - `main.py` - Entry point, includes the UI
+  - `main.py` - Entry point, includes the GUI
   - `udp_server.py` - UDP broadcasting service
-  - `stats.py` - Processes data retrieved from different platforms (e.g., Windows and Linux)
+  - `stats.py` - Abstracts hardware data retrieval across different operating systems
   - `external/` - Contains external dependencies, such as LibreHardwareMonitor
   - `sensors/` - Contains sensor-related code
 
@@ -23,14 +23,14 @@ To install and run the Hardware Monitoring software, follow these steps:
 
 2. Set up and use a virtual environment:
     ```bash
-    python3 -m venv myvenv
-    source myvenv/bin/activate
+    python3 -m venv env
+    source env/bin/activate
     ```
-    > `myvenv` is the name of the virtual environment. Installing third-party libraries in the virtual environment ensures that only the necessary libraries are included.
+    > `env` is the name of the virtual environment. Installing third-party libraries in the virtual environment ensures that only the necessary libraries are included.
 
 3. Install the required Python packages using pip:
     ```bash
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
     ```
 
 ## Usage
@@ -49,12 +49,12 @@ To package the Hardware Monitoring application into a standalone executable, fol
 
 1. Ensure the virtual environment is activated:
     ```bash
-    source myvenv/bin/activate
+    source env/bin/activate
     ```
 
 2. Install PyInstaller:
     ```bash
-    pip install pyinstaller
+    pip3 install pyinstaller
     ```
 
 3. Use a spec file to package files from multiple directories:
@@ -73,6 +73,8 @@ To package the Hardware Monitoring application into a standalone executable, fol
         ```bash
         pyinstaller main.spec
         ```
+
+4. You can find the executable in the computerMonitor/dist directory.
 
 ### Notes
 
