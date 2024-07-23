@@ -1,16 +1,14 @@
+# computerMonitor
 
-# Vobot Mini Dock Companion Software
-
-This repository contains the companion software for Vobot Mini Dock, primarily used for PC hardware monitoring. The core application is the Hardware Monitoring software, which communicates with the Mini Dock via UDP unicast mode to display received computer information.
+The Hardware Monitoring software communicates with the Vobot Mini Dock via UDP unicast mode to display received computer information.
 
 ## Directory Structure
 
-- `computerMonitor/` - Contains the source code for the Hardware Monitoring software
-  - `main.py` - Entry point, includes the GUI
-  - `udp_server.py` - UDP broadcasting service
-  - `stats.py` - Abstracts hardware data retrieval across different operating systems
-  - `external/` - Contains external dependencies, such as LibreHardwareMonitor
-  - `sensors/` - Contains sensor-related code
+- `main.py` - Entry point, includes the GUI
+- `udp_server.py` - UDP broadcasting service
+- `stats.py` - Abstracts hardware data retrieval across different operating systems
+- `external/` - Contains external dependencies, such as LibreHardwareMonitor
+- `sensors/` - Contains sensor-related code
 
 ## Installation
 
@@ -35,7 +33,7 @@ To install and run the Hardware Monitoring software, follow these steps:
 
 ## Usage
 
-With the virtual environment activated, start the Hardware Monitoring software from the `computerMonitor` directory:
+With the virtual environment activated, start the Hardware Monitoring software:
 
 ```bash
 python main.py
@@ -74,19 +72,10 @@ To package the Hardware Monitoring application into a standalone executable, fol
         pyinstaller main.spec
         ```
 
-4. You can find the executable in the computerMonitor/dist directory.
+4. You can find the executable in the `computerMonitor/dist` directory.
 
 ### Notes
 
 1. The executable files generated for different operating systems are different:
     - For example, an executable packaged on Ubuntu can only run on Ubuntu.
     - Therefore, you need to package the application on the respective operating systems to generate executables for different operating systems.
-
-## Contributing
-
-If you have any suggestions or improvements, please submit a Pull Request or create an Issue.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
