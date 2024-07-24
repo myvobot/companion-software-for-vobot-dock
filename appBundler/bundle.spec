@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['build_script.py'],
+    ['bundle.py'],
     pathex=[],
     binaries=[],
     datas=[

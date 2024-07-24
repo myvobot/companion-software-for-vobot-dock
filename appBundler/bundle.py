@@ -6,14 +6,34 @@ import sys
 import platform
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import yaml
 
-def zip_folder(folder_path, output_path):
+def load_manifest(manifest_path):
+    with open(manifest_path, 'r', encoding='utf-8') as file:
+        return yaml.safe_load(file)
+
+def should_include(file_path, include_paths, exclude_paths):
+    # Check if it is in the include list
+    for include in include_paths:
+        if file_path.startswith(include[:-3] if include.endswith(".py") else include):
+            # Check if it is in the exclude list
+            for exclude in exclude_paths:
+                if file_path.startswith(exclude[:-3] if exclude.endswith(".py") else exclude):
+                    return False
+            return True
+    return False
+
+def zip_folder(file_name, folder_path, output_path, include_paths=None, exclude_paths=None):
+    parent_folder = file_name
+    folder_path = os.path.abspath(folder_path)
     with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, folder_path)
-                zipf.write(file_path, arcname)
+                arcname = os.path.join(parent_folder, os.path.relpath(file_path, folder_path))
+                print(file_path)
+                if include_paths is None or should_include(file_path, include_paths, exclude_paths):
+                    zipf.write(file_path, arcname)
 
 def get_mpy_cross_executable():
     if hasattr(sys, '_MEIPASS'):
@@ -84,9 +104,18 @@ def main():
     root.withdraw()  # Hide the root window
 
     folder_path = filedialog.askdirectory(title="Select folder to bundle")
+    file_name = os.path.basename(folder_path)
     if not folder_path:
         messagebox.showwarning("Warning", "No folder selected")
         return
+    init_path = os.path.join(folder_path, '__init__.py')
+    # Check required documents
+    if not os.path.exists(init_path):
+        messagebox.showwarning("Warning", "Missing required file __init__.py")
+        return
+
+    manifest_path = os.path.join(folder_path, 'manifest.yml')
+    include_paths = exclude_paths = None
 
     open_source = messagebox.askyesno("Open Source", "Allow code to be open source?")
 
@@ -98,13 +127,19 @@ def main():
             return
         folder_path = temp_folder
 
-    output_path = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("ZIP files", "*.zip")], title="Save bundled file")
+    if os.path.exists(manifest_path):
+        manifest = load_manifest(manifest_path).get("manifest",{})
+        include_paths = [os.path.join(folder_path, item['path']) for item in manifest.get('include', [])]
+        exclude_paths = [os.path.join(folder_path, item['path']) for item in manifest.get('exclude', [])]
+
+    output_path = filedialog.asksaveasfilename(defaultextension=".vbt", filetypes=[("VBT files", "*.vbt")], title="Save bundled file", initialfile=file_name + ".vbt")
     if not output_path:
         messagebox.showwarning("Warning", "No save path selected")
+        if not open_source: shutil.rmtree(temp_folder)
         return
 
     try:
-        zip_folder(folder_path, output_path)
+        zip_folder(file_name, folder_path, output_path, include_paths, exclude_paths)
         messagebox.showinfo("Success", f"Folder successfully bundled as {output_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Error during bundling: {e}")
