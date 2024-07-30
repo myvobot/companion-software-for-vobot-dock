@@ -33,7 +33,7 @@ To install and run the Application Bundler tool, follow these steps:
 With the virtual environment activated, start the bundling process:
 
 ```bash
-python bundle.py
+python3 bundle.py
 ```
 
 This will launch an interactive UI where you can select the folder to be bundled and choose whether to make the source code open. The tool will then bundle the selected folder into a .vbt file.

@@ -27,7 +27,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='build_script',
+    name='Dock App Bundler',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -43,7 +43,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='build_script.app',
+    name='Dock App Bundler.app',
     icon=None,
     bundle_identifier=None,
 )

@@ -108,9 +108,11 @@ def main():
     if not folder_path:
         messagebox.showwarning("Warning", "No folder selected")
         return
-    init_path = os.path.join(folder_path, '__init__.py')
+
+    init_py_path = os.path.join(folder_path, '__init__.py')
+    init_mpy_path = os.path.join(folder_path, '__init__.mpy')
     # Check required documents
-    if not os.path.exists(init_path):
+    if not (os.path.exists(init_py_path) or os.path.exists(init_mpy_path)):
         messagebox.showwarning("Warning", "Missing required file __init__.py")
         return
 
