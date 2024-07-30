@@ -102,6 +102,9 @@ def convert_py_to_mpy(src_folder, dst_folder, exclude_folder):
 def main():
     root = tk.Tk()
     root.withdraw()  # Hide the root window
+    root.lift()  # Bring the window to the front
+    root.attributes('-topmost', True)  # Make the window topmost
+    root.after_idle(root.attributes, '-topmost', False)  # Disable topmost after it is brought to the front
 
     folder_path = filedialog.askdirectory(title="Select folder to bundle")
     file_name = os.path.basename(folder_path)
