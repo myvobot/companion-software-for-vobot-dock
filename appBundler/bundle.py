@@ -134,8 +134,8 @@ def main():
 
     if os.path.exists(manifest_path):
         manifest = load_manifest(manifest_path).get("manifest",{})
-        include_paths = [os.path.join(folder_path, item['path']) for item in manifest.get('include', [])]
-        exclude_paths = [os.path.join(folder_path, item['path']) for item in manifest.get('exclude', [])]
+        include_paths = [os.path.normpath(os.path.join(folder_path, item['path'])) for item in manifest.get('include', [])]
+        exclude_paths = [os.path.normpath(os.path.join(folder_path, item['path'])) for item in manifest.get('exclude', [])]
 
     output_path = filedialog.asksaveasfilename(defaultextension=".vbt", filetypes=[("VBT files", "*.vbt")], title="Save bundled file", initialfile=file_name + ".vbt")
     if not output_path:
