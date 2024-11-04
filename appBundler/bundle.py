@@ -9,13 +9,18 @@ from tkinter import filedialog, messagebox
 import yaml
 import webbrowser
 
+required_fields = [
+        'name', 'description', 'version',
+        'minimum_version', 'compatible_devices'
+    ]
+
 def load_manifest(manifest_path):
     with open(manifest_path, 'r', encoding='utf-8') as file:
         return yaml.safe_load(file)
 
 def should_include(file_path, include_paths, exclude_paths):
     # Check if it is in the include list
-    if file_path.endswith("manifest.yml"): return True
+    if file_path.endswith(("manifest.yml", "manifest.py", "manifest.mpy")): return True
     for include in include_paths:
         if file_path.startswith(include[:-3] if include.endswith(".py") else include):
             # Check if it is in the exclude list
@@ -101,6 +106,34 @@ def convert_py_to_mpy(src_folder, dst_folder, exclude_folder):
                 shutil.copy(file_path, output_dir)
     return True
 
+def convert_yml_to_py(path, manifest):
+    # Convert manifest.yml to manifest.py
+    with open(path, 'w', encoding='utf-8') as file:
+        for field in required_fields:
+            if field in manifest.get('application', {}):
+                value = manifest['application'][field]
+                if type(value) is str: file.write(f"{field.upper()} = '{value}'\n")
+                else: file.write(f"{field.upper()} = {value}\n")
+            elif field in manifest.get('system_requirements', {}):
+                value = manifest['system_requirements'][field]
+                if type(value) is str: file.write(f"{field.upper()} = '{value}'\n")
+                else: file.write(f"{field.upper()} = {value}\n")
+        attributes = manifest.get('attributes', {})
+        for key, value in attributes.items():
+            if type(value) is str: file.write(f"{key.upper()} = '{value}'\n")
+            else: file.write(f"{key.upper()} = {value}\n")
+
+def manifest_import_init(path):
+    # Import manifest.py in the __init__ file
+    try:
+        file_path = os.path.join(path, "__init__.py")
+        with open(file_path, 'r+') as file:
+            content = file.read()
+            file.seek(0, 0)
+            file.write('from . import manifest\n' + content)
+    except:
+       pass
+
 def open_link(event):
     webbrowser.open_new(r"https://dock.myvobot.com/developer/guides/publishing-guide/manifest_file")
 
@@ -131,10 +164,6 @@ def show_custom_messagebox(message_text):
     custom_box.mainloop()
 
 def validate_manifest(manifest):
-    required_fields = [
-        'name', 'description', 'version',
-        'minimum_version', 'compatible_devices'
-    ]
     for field in required_fields:
         if field not in manifest['application'] and field not in manifest['system_requirements']:
             return False, f"Missing required field: {field}.\nFor the content and required fields of manifest.yml, please visit: "
@@ -165,24 +194,23 @@ def main():
     if not os.path.exists(manifest_path):
         show_custom_messagebox("Missing manifest.yml.\nFor the content and required fields of manifest.yml, please visit: ")
         return
-
+    manifest_py_path = os.path.join(folder_path, 'manifest.py')
     manifest = load_manifest(manifest_path)
     is_valid, error_message = validate_manifest(manifest)
     if not is_valid:
         show_custom_messagebox(error_message)
         return
+    convert_yml_to_py(manifest_py_path, manifest)
+    manifest_import_init(folder_path)
 
     include_paths = exclude_paths = None
 
-    open_source = messagebox.askyesno("Open Source", "Allow code to be open source?")
-
-    if not open_source:
-        temp_folder = os.path.join(folder_path, 'temp_mpy')
-        os.makedirs(temp_folder, exist_ok=True)
-        if not convert_py_to_mpy(folder_path, temp_folder, temp_folder):
-            shutil.rmtree(temp_folder)  # Clean up temporary folder
-            return
-        folder_path = temp_folder
+    temp_folder = os.path.join(folder_path, 'temp_mpy')
+    os.makedirs(temp_folder, exist_ok=True)
+    if not convert_py_to_mpy(folder_path, temp_folder, temp_folder):
+        shutil.rmtree(temp_folder)  # Clean up temporary folder
+        return
+    folder_path = temp_folder
     try:
         if 'files' in manifest and 'include' in manifest['files']:
             include_paths = [os.path.normpath(os.path.join(folder_path, item)) for item in manifest['files'].get('include', [])]
@@ -194,7 +222,7 @@ def main():
     output_path = filedialog.asksaveasfilename(defaultextension=".vbt", filetypes=[("VBT files", "*.vbt")], title="Save bundled file", initialfile=file_name + ".vbt")
     if not output_path:
         messagebox.showwarning("Warning", "No save path selected")
-        if not open_source: shutil.rmtree(temp_folder)
+        shutil.rmtree(temp_folder)
         return
 
     try:
@@ -203,8 +231,7 @@ def main():
     except Exception as e:
         messagebox.showerror("Error", f"Error during bundling: {e}")
     finally:
-        if not open_source:
-            shutil.rmtree(temp_folder)  # Clean up temporary folder
+        shutil.rmtree(temp_folder)  # Clean up temporary folder
 
 if __name__ == "__main__":
     main()
