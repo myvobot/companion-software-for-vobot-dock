@@ -5,7 +5,7 @@ The Hardware Monitoring software communicates with the Vobot Mini Dock via UDP u
 ## Directory Structure
 
 - `main.py` - Entry point, includes the GUI
-- `udp_server.py` - UDP broadcasting service
+- `udp_client.py` - UDP broadcasting service
 - `stats.py` - Abstracts hardware data retrieval across different operating systems
 - `external/` - Contains external dependencies, such as LibreHardwareMonitor
 - `sensors/` - Contains sensor-related code

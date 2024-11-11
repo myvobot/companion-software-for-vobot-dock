@@ -1,13 +1,28 @@
 import re
+import os
+import sys
 import json
 import time
+import platform
+import datetime
 import socket
 import threading
-import udp_server
+import udp_client
+import configparser
 from stats import *
 import tkinter as tk
 from tkinter import messagebox
 
+EXE_PATH = os.path.dirname(sys.executable)
+
+if platform.system() not in ("Windows", "Linux"): # MAC
+    dirs = []
+    for dir_name in EXE_PATH.split("/"):
+        if dir_name.endswith(".app"): break
+        dirs.append(dir_name)
+    EXE_PATH = "/".join(dirs)
+
+CONFIGURATION_FILE_PATH = EXE_PATH + "/configuration.ini"
 
 def is_valid_ip(ip):
     # Regular expression pattern for IP address
@@ -60,7 +75,30 @@ class GUI:
         self.root = tk.Tk()
         self.root.title('Computer Monitor')
         self.running = False
+        self.config = configparser.ConfigParser()
+
+        self.load_configuration()
         self.initial_interface()
+
+    def load_configuration(self):
+        self.config.read(CONFIGURATION_FILE_PATH)
+        for section in self.config.sections():
+            if section != "IP": continue
+            for option in self.config.options(section):
+                if option != "target": continue
+                self.device_ip = self.config.get(section, option)
+
+                if not is_valid_ip(self.device_ip): self.device_ip = ""
+                return
+
+    def save_configuration(self):
+        if not self.config.read(CONFIGURATION_FILE_PATH):
+            self.config["IP"] = {"target": self.device_ip}
+        else:
+            self.config.set("IP", "target", self.device_ip)
+
+        with open(CONFIGURATION_FILE_PATH, "w") as f:
+            self.config.write(f)
 
     def initial_interface(self):
         # Initial interface
@@ -72,12 +110,21 @@ class GUI:
 
         self.ip_entry = tk.Entry(self.root)
         self.ip_entry.place(x=100, y=21, width=198, height=30)
+        if self.device_ip:
+            self.ip_entry.delete(0, tk.END)
+            self.ip_entry.insert(0, self.device_ip)
 
         btn = tk.Button(self.root, text="Start", takefocus=False, command=self.start)
         btn.place(x=19, y=74, width=70, height=25)
 
-        btn = tk.Button(self.root, text="Clear", takefocus=False, command=lambda: self.ip_entry.delete(0,tk.END))
+        btn = tk.Button(self.root, text="Clear", takefocus=False, command=lambda: self.ip_entry.delete(0, tk.END))
         btn.place(x=228, y=74, width=70, height=25)
+
+    def log(self, line):
+        try:
+            ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.log_text.insert(1.0, f'{ts}: {line}\n')
+        except: pass
 
     def run_interface(self):
         # Interface during runtime
@@ -85,9 +132,9 @@ class GUI:
         self.root.resizable(False, False)
 
         self.log_text = tk.Text(self.root)
-        self.log_text.place(x=0, y=0, width=600, height=143)
+        self.log_text.place(x=0, y=0, width=600, height=160)
         self.log_text.bind("<KeyPress>", lambda e: "break")
-        self.log_text.insert(1.0, f'device IP:{self.device_ip}' + '\n')
+        self.log(f'Target device IP: {self.device_ip}')
 
         btn = tk.Button(self.root, text="Stop", takefocus=False, command=self.stop)
         btn.place(x=260, y=161, width=80, height=25)
@@ -97,29 +144,29 @@ class GUI:
             widget.destroy()
 
     def broadcast(self):
-        udp_server.init()
+        udp_client.init()
+        # Put the application in the background
+        # self.root.withdraw()
+
+        # Minimize the window
+        self.root.iconify()
         while self.running:
             try:
                 text = ""
                 try:
                     device_info = {
-                        "NET": Net.stats(),
+                        "Network": Net.stats(),
                         "CPU": get_cpu_info(),
                         "GPU": get_gpu_info(),
                         "Memory": get_memory_info(),
                         "Disk": get_disk_info(),
-                        "dev_ip": self.device_ip,
+                        "Target": self.device_ip,
                         "IP": socket.gethostbyname(socket.gethostname())
                     }
-                    udp_server.send(bytes(json.dumps(device_info), 'utf-8'))
-                    text = f"Successfully sent."
+                    text = udp_client.send(bytes(json.dumps(device_info), 'utf-8'))
                 except Exception as e:
-                    text = "fail in send[" + str(e) + "]."
-
-                try:
-                    self.log_text.insert(1.0, f'{text}' + '\n')
-                except: pass
-
+                    text = "Fail to send [" + str(e) + "]."
+                self.log(text)
                 time.sleep(5)
             except RuntimeError:
                 break
@@ -128,7 +175,8 @@ class GUI:
     def start(self):
         self.device_ip = self.ip_entry.get()
         if is_valid_ip(self.device_ip):
-            udp_server.unicast_ip = self.device_ip
+            self.save_configuration()
+            udp_client.unicast_ip = self.device_ip
             self.win_clean()
             self.running = True
             self.run_interface()
@@ -143,7 +191,6 @@ class GUI:
         self.running = False
         self.win_clean()
         self.initial_interface()
-        self.ip_entry.insert(0, self.device_ip)
 
 if __name__ == '__main__':
     gui = GUI()

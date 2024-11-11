@@ -8,6 +8,21 @@ unicast_ip = "255.255.255.255"
 def send(message):
     if server:
         server.sendto(message, (unicast_ip, unicast_port))
+        retry_times = 2
+        while retry_times > 0:
+            retry_times -= 1
+            try:
+                data, client_address = server.recvfrom(1024)
+                data = eval(data.decode())
+                if client_address[0] != unicast_ip: continue
+
+                if not isinstance(data, dict): return "Invalid payload data"
+                elif data.get("code", 500) == 200: return "Sent successfully."
+                else: return f"Device receive error ({data.get('error', 'Unknown error')})"
+            except socket.timeout: continue
+        return "Send timeout."
+    else:
+        return "Service not started."
 
 def init(port=32123):
     global server, unicast_port
@@ -27,4 +42,4 @@ def init(port=32123):
 
     # Set a timeout so the socket does not block
     # indefinitely when trying to receive data.
-    server.settimeout(0.2)
+    server.settimeout(2)
