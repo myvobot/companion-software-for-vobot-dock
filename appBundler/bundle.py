@@ -134,6 +134,21 @@ def manifest_import_init(path):
     except:
        pass
 
+def cleanup_manifest_files(folder_path):
+    manifest_py_path = os.path.join(folder_path, 'manifest.py')
+    if os.path.exists(manifest_py_path):
+        os.remove(manifest_py_path)
+
+    init_py_path = os.path.join(folder_path, '__init__.py')
+    if os.path.exists(init_py_path):
+        with open(init_py_path, 'r') as file:
+            lines = file.readlines()
+
+        lines = [line for line in lines if 'from . import manifest' not in line]
+
+        with open(init_py_path, 'w') as file:
+            file.writelines(lines)
+
 def open_link(event):
     webbrowser.open_new(r"https://dock.myvobot.com/developer/guides/publishing-guide/manifest_file")
 
@@ -232,6 +247,7 @@ def main():
         messagebox.showerror("Error", f"Error during bundling: {e}")
     finally:
         shutil.rmtree(temp_folder)  # Clean up temporary folder
+        cleanup_manifest_files(os.path.dirname(temp_folder))
 
 if __name__ == "__main__":
     main()
